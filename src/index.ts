@@ -1,28 +1,48 @@
 import {WebSocket, WebSocketServer} from "ws";
 
 
-const wss = new WebSocketServer({port:8080})
+const wss = new WebSocketServer({port:8081})
+
+
+
+interface User {
+  room:string;
+  socket:WebSocket;
+}
 let userCount = 0;
-let allSockets:WebSocket[] =[]
+let allSockets:User[] =[]
 
 wss.on("connection" , (socket) => {
-  allSockets.push(socket)
-   socket.on("message" , (message) => {
-    console.log("message recieved" + message.toString());
-    for( let i = 0; i<allSockets.length;i++){
-        const s = allSockets[i];
-        console.log("full detail s is :" ,s)
-        s.send(message.toString() + ":sent from the server ")
-        
-    }
+  socket.on("message" , (message) => {
+     const parsedMessage = JSON.parse(message as unknown as string);
+     if(parsedMessage.type === "join"){
+      console.log("userJoind the ", parsedMessage.payload.roomId);
+       allSockets.push({
+        socket,
+        room:parsedMessage.payload.roomId
+       })
+     }
 
-    
-    
+     if(parsedMessage.type == "chat"){
+      // const currentUserRoom = allSockets.find((x) => x.socket == socket)
+      console.log("user wants chat ");
 
-   })
-    
+      let currentUserRoom = null;
+      for(let i =0 ;i< allSockets.length ;i++){
+        if(allSockets[i].socket == socket){
+          currentUserRoom = allSockets[i].room
+        }
+      }
+
+      for( let i = 0 ; i <allSockets.length ;i++){
+        if(allSockets[i].room == currentUserRoom ){
+          allSockets[i].socket.send(parsedMessage.payload.message )
+        }
+      }
+      
+     }
+  })
 })
-
 //This is how Socket look alike
 
 
