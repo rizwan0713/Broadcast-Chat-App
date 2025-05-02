@@ -3,13 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ws_1 = require("ws");
 const wss = new ws_1.WebSocketServer({ port: 8080 });
 let userCount = 0;
+let allSockets = [];
 wss.on("connection", (socket) => {
-    socket.on("message", (event) => {
-        const message = event.toString();
-        if (message === "ping") {
-            socket.send("pong");
+    allSockets.push(socket);
+    socket.on("message", (message) => {
+        console.log("message recieved" + message.toString());
+        for (let i = 0; i < allSockets.length; i++) {
+            const s = allSockets[i];
+            console.log("full detail s is :", s);
+            s.send(message.toString() + ":sent from the server ");
         }
     });
-    userCount = userCount + 1;
-    console.log("user Connected #" + userCount);
 });
