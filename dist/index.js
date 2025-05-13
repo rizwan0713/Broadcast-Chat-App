@@ -6,25 +6,48 @@ let userCount = 0;
 let allSockets = [];
 wss.on("connection", (socket) => {
     socket.on("message", (message) => {
+        var _a;
         const parsedMessage = JSON.parse(message);
         if (parsedMessage.type === "join") {
+            console.log("userJoind the ", parsedMessage.payload.roomId);
             allSockets.push({
                 socket,
                 room: parsedMessage.payload.roomId
             });
         }
+        //  if(parsedMessage.type == "chat"){
+        //   // const currentUserRoom = allSockets.find((x) => x.socket == socket)
+        //   console.log("user wants chat ");
+        //   let currentUserRoom = null;
+        //   for(let i =0 ;i< allSockets.length ;i++){
+        //     if(allSockets[i].socket == socket){
+        //       currentUserRoom = allSockets[i].room
+        //     }
+        //   }
+        //   for( let i = 0 ; i <allSockets.length ;i++){
+        //     if(allSockets[i].room == currentUserRoom ){
+        //       allSockets[i].socket.send(parsedMessage.payload.message )
+        //     }
+        //   }
+        //  }
         if (parsedMessage.type == "chat") {
-            // const currentUserRoom = allSockets.find((x) => x.socket == socket)
-            let currentUserRoom = null;
-            for (let i = 0; i < allSockets.length; i++) {
-                if (allSockets[i].socket == socket) {
-                    currentUserRoom = allSockets[i].room;
-                }
-            }
-            for (let i = 0; i < allSockets.length; i++) {
-                if (allSockets[i].room == currentUserRoom) {
-                    allSockets[i].socket.send(parsedMessage.payload.message);
-                }
+            console.log("User sent a message");
+            // Find the sender's room
+            const currentUserRoom = (_a = allSockets.find(user => user.socket === socket)) === null || _a === void 0 ? void 0 : _a.room;
+            if (currentUserRoom) {
+                // Broadcast to all users in the same room
+                const messageToSend = JSON.stringify({
+                    type: "message",
+                    payload: {
+                        name: parsedMessage.payload.name,
+                        message: parsedMessage.payload.message
+                    }
+                });
+                allSockets.forEach(user => {
+                    if (user.room === currentUserRoom) {
+                        user.socket.send(messageToSend);
+                    }
+                });
             }
         }
     });
